@@ -508,12 +508,40 @@ const handleCalculate = () => {
             </div>
           )}
           {adjustedResults && (
-        <div>
-          <h3>Adjusted Results</h3>
-          <pre>{JSON.stringify(adjustedResults, null, 2)}</pre>
-          <h3>Standard Size: {standardSize}</h3>
-          <h3>Height Category: {heightCategory}</h3>
+       {adjustedResults && (
+        <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+          <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-3">
+            Adjusted Results
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            {Object.entries(adjustedResults).map(([key, value], index) => (
+              <div
+                key={index}
+                className="bg-blue-100 text-center p-3 rounded shadow-sm"
+              >
+                <p className="text-sm font-medium text-gray-600 capitalize">{key}</p>
+                <p className="text-xl font-bold text-gray-800">{value}"</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Standard Size
+            </h3>
+            <div className="bg-blue-100 p-4 rounded shadow-sm text-center">
+              <p className="text-2xl font-bold text-blue-800">{standardSize}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Height Category
+            </h3>
+            <div className="bg-blue-100 p-4 rounded shadow-sm text-center">
+              <p className="text-2xl font-bold text-blue-800">{heightCategory}</p>
+            </div>
+          </div>
         </div>
+      )}      
       )}
         </div>
       </div>
