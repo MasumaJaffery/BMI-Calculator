@@ -5,7 +5,9 @@ import {
   validateVerticalProportions,
   validateBodyShape,
 } from "../components/utils/validation"; 
-import { adjustmentFactors } from "./constants/adjustmentFactors";
+import { standardSizes } from '../components/constants/standardSizes.js';
+import { bodyShapeData } from '../components/constants/bodyShapeData.js';
+import { adjustmentFactors } from '../components/constants/adjustmentFactors.js';
 
 const SizeCalculator = () => {
   const [measurements, setMeasurements] = useState({
@@ -24,6 +26,8 @@ const SizeCalculator = () => {
   const [proportions, setProportions] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [bmi, setBmi] = useState(0);
+  const [adjustedResults, setAdjustedResults] = useState(null);
+
 
   // Define the handleBodyShapeChange function
   const handleBodyShapeChange = (e) => {
@@ -35,11 +39,19 @@ const SizeCalculator = () => {
   };
 
 const handleCalculate = () => {
-  const inputErrors = validateInputs(measurements);
-  const proportionWarnings = validateProportions(measurements);
-  const verticalProportionWarnings =
-    validateVerticalProportions(measurements);
-  const bodyShapeWarnings = validateBodyShape(measurements);
+  console.log("Button clicked - Starting calculation");
+
+    const inputErrors = validateInputs(measurements);
+    console.log("Input Errors:", inputErrors);
+
+    const proportionWarnings = validateProportions(measurements);
+    console.log("Proportion Warnings:", proportionWarnings);
+
+    const verticalProportionWarnings = validateVerticalProportions(measurements);
+    console.log("Vertical Proportion Warnings:", verticalProportionWarnings);
+
+    const bodyShapeWarnings = validateBodyShape(measurements);
+    console.log("Body Shape Warnings:", bodyShapeWarnings);
 
   if (
     inputErrors.length > 0 ||
@@ -67,7 +79,120 @@ const handleCalculate = () => {
   }
 
   // Perform calculations
-  let hips;
+    // Embed external methods here
+    const validateAndAdjustResults = (results, actualMeasurements, bodyShape) => {
+      const adjusted = { ...results };
+      const ratios = validationRules.ratios.hipsToWaist[bodyShape] || validationRules.ratios.hipsToWaist.average;
+  
+      Object.entries(actualMeasurements).forEach(([key, value]) => {
+        if (value) adjusted[key] = value;
+      });
+  
+      if (adjusted.waist && adjusted.bust) {
+        const bustWaistRatio = adjusted.bust / adjusted.waist;
+        if (bustWaistRatio < validationRules.ratios.bustToWaist.min || bustWaistRatio > validationRules.ratios.bustToWaist.max) {
+          adjusted.bust = adjusted.waist * validationRules.ratios.bustToWaist.min;
+        }
+      }
+  
+      if (adjusted.waist && adjusted.hips) {
+        const hipWaistRatio = adjusted.hips / adjusted.waist;
+        if (hipWaistRatio < ratios.min || hipWaistRatio > ratios.max) {
+          adjusted.hips = adjusted.waist * (hipWaistRatio < ratios.min ? ratios.min : ratios.max);
+        }
+      }
+  
+      Object.keys(adjusted).forEach(key => {
+        adjusted[key] = Math.round(adjusted[key] * 10) / 10;
+      });
+  
+      return adjusted;
+    };
+  
+    const applyAdjustments = (measurements, bodyShape, additionalFactors) => {
+      let adjusted = { ...measurements };
+      const shapeData = bodyShapeData[bodyShape];
+  
+      Object.entries(shapeData.adjustments).forEach(([key, value]) => {
+        if (adjusted[key]) adjusted[key] *= value;
+      });
+  
+      if (additionalFactors.age && adjustmentFactors.age[additionalFactors.age]) {
+        const ageAdjustments = adjustmentFactors.age[additionalFactors.age];
+        Object.entries(ageAdjustments).forEach(([key, value]) => {
+          if (key !== 'confidenceBonus' && adjusted[key]) {
+            adjusted[key] *= value;
+          }
+        });
+      }
+  
+      Object.keys(adjusted).forEach(key => {
+        adjusted[key] = Math.round(adjusted[key] * 10) / 10;
+      });
+  
+      return adjusted;
+    };
+  
+    const getStandardSize = (measurements) => {
+      const { bust, waist, hips } = measurements;
+      let bestSize = 'M';
+      let bestMatch = 0;
+  
+      Object.entries(standardSizes).forEach(([size, ranges]) => {
+        let matches = 0;
+        let total = 0;
+  
+        if (bust) {
+          total++;
+          if (bust >= ranges.bust.min && bust <= ranges.bust.max) matches++;
+        }
+        if (waist) {
+          total++;
+          if (waist >= ranges.waist.min && waist <= ranges.waist.max) matches++;
+        }
+        if (hips) {
+          total++;
+          if (hips >= ranges.hips.min && hips <= ranges.hips.max) matches++;
+        }
+  
+        const matchRate = total > 0 ? matches / total : 0;
+        if (matchRate > bestMatch) {
+          bestMatch = matchRate;
+          bestSize = size;
+        }
+      });
+  
+      return bestSize;
+    };
+  
+    const getHeightCategory = (height) => {
+      if (!height) return 'average';
+      if (height < 63) return 'short';
+      if (height > 68) return 'tall';
+      return 'average';
+    };
+  
+    const handleCalculate = () => {
+      // Validation logic as before
+  
+      const initialResults = {
+        bust: measurements.bust,
+        waist: measurements.waist,
+        hips: 0, // Initial hips calculation based on shape
+      };
+  
+      // Add new methods here
+      const adjusted = validateAndAdjustResults(initialResults, measurements, measurements.bodyShape);
+      const finalAdjusted = applyAdjustments(adjusted, measurements.bodyShape, { age: measurements.ageGroup });
+  
+      const size = getStandardSize(finalAdjusted);
+      const heightCat = getHeightCategory(measurements.height);
+  
+      setAdjustedResults(finalAdjusted);
+      setStandardSize(size);
+      setHeightCategory(heightCat);
+    };
+  
 
   // Adjust hips calculation based on body shape
   switch (bodyShape) {
@@ -201,7 +326,7 @@ const handleCalculate = () => {
                 value={measurements.waist}
                 id="waist"
                 className="w-full p-2 border rounded"
-                placeholder="Valid range: 23-50 inches"
+                placeholder="Valid range: 22-50 inches"
                 onChange={(e) =>
                   setMeasurements({ ...measurements, waist: e.target.value })
                 }
@@ -382,6 +507,14 @@ const handleCalculate = () => {
               </div>
             </div>
           )}
+          {adjustedResults && (
+        <div>
+          <h3>Adjusted Results</h3>
+          <pre>{JSON.stringify(adjustedResults, null, 2)}</pre>
+          <h3>Standard Size: {standardSize}</h3>
+          <h3>Height Category: {heightCategory}</h3>
+        </div>
+      )}
         </div>
       </div>
     </div>
