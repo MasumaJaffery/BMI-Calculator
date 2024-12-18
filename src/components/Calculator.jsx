@@ -257,6 +257,16 @@ const handleCalculate = () => {
     thigh,
     inseam,
   });
+  console.log("Updated Results:", {
+    bust,
+    waist,
+    hips,
+    shoulderWidth,
+    upperArm,
+    thigh,
+    inseam,
+  });
+  
   setBmi(calculatedBmi);
   setConfidenceScore(confidence);
   setConfidenceLevel(level);
