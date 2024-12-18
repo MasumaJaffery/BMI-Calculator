@@ -507,7 +507,6 @@ const handleCalculate = () => {
               </div>
             </div>
           )}
-          {adjustedResults && (
        {adjustedResults && (
         <div className="bg-white shadow-md rounded-lg p-6 mt-6">
           <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-3">
@@ -542,7 +541,6 @@ const handleCalculate = () => {
           </div>
         </div>
       )}      
-      )}
         </div>
       </div>
     </div>
