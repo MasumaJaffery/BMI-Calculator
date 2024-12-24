@@ -15,6 +15,7 @@ const SizeCalculator = () => {
     bust: 36, // Default bust in inches
     ageGroup: "18-24", // Default age group
     bodyShape: "", // Body shape determined dynamically
+    unit: "inches", // Global unit
   });
 
   const [results, setResults] = useState(null);
@@ -212,43 +213,61 @@ const SizeCalculator = () => {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Input Measurements</h2>
-            {["height", "weight", "waist", "bust"].map((field) => (
-              <div key={field} className="mb-4">
-                <label className="block font-medium capitalize">{field}</label>
-                <input
-                  type="number"
-                  name={field}
-                  value={measurements[field]}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-            ))}
+         <div>
+  <h2 className="text-xl font-semibold mb-4">Input Measurements</h2>
 
-            <div className="mb-4">
-              <label className="block font-medium">Age Group</label>
-              <select
-                name="ageGroup"
-                value={measurements.ageGroup}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              >
-                <option value="18-24">18-24</option>
-                <option value="25-34">25-34</option>
-                <option value="35-44">35-44</option>
-                <option value="45-54">45-54</option>
-                <option value="55+">55+</option>
-              </select>
-            </div>
-            <button
-              onClick={handleCalculate}
-              className="w-full bg-blue-500 text-white py-2 rounded"
-            >
-              Calculate Measurements
-            </button>
-          </div>
+  {/* Unit Selection Field */}
+  <div className="mb-4">
+    <label className="block font-medium">Select Unit</label>
+    <select
+      name="unit"
+      value={measurements.unit}
+      onChange={handleChange}
+      className="w-full p-2 border rounded"
+    >
+      <option value="inches">Inches</option>
+      <option value="cm">Cm</option>
+    </select>
+  </div>
+
+  {["height", "weight", "waist", "bust"].map((field) => (
+    <div key={field} className="mb-4">
+      <label className="block font-medium capitalize">{field}</label>
+      <input
+        type="number"
+        name={field}
+        value={measurements[field]}
+        onChange={handleChange}
+        className="w-full p-2 border rounded"
+        placeholder={`Enter ${field} in ${measurements.unit}`}
+      />
+    </div>
+  ))}
+
+  <div className="mb-4">
+    <label className="block font-medium">Age Group</label>
+    <select
+      name="ageGroup"
+      value={measurements.ageGroup}
+      onChange={handleChange}
+      className="w-full p-2 border rounded"
+    >
+      <option value="18-24">18-24</option>
+      <option value="25-34">25-34</option>
+      <option value="35-44">35-44</option>
+      <option value="45-54">45-54</option>
+      <option value="55+">55+</option>
+    </select>
+  </div>
+
+  <button
+    onClick={handleCalculate}
+    className="w-full bg-blue-500 text-white py-2 rounded"
+  >
+    Calculate Measurements
+  </button>
+</div>
+
 
           {/* Results Section */}
           {results && (
