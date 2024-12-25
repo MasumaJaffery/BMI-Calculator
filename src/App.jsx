@@ -1,6 +1,6 @@
 import './App.css';
 import './index.css';
-import SizeCalculator from './components/Calculator';
+import SizeCalculator from './components/BMI';
 function App() {
 
   return (
