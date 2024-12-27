@@ -33,15 +33,13 @@ const getStandardSize = (measurements) => {
   return bestSize;
 };
 
-console.log("Bust Component:", bustComponent); 
-console.log("Waist Component:", waistComponent); 
-console.log("Calculated Hips with Precision Fix:", hips); 
-
-
 const SizeCalculator = () => {
   const [measurements, setMeasurements] = useState({
     bust: "",
     waist: "",
+    height: "",
+    weight: "",
+    ageGroup: "18-24", // Default value
     unit: "inches",
   });
 
@@ -58,33 +56,22 @@ const SizeCalculator = () => {
 
     if (!waist || !bust) {
       setErrors(["Bust and waist measurements are required."]);
+      setResults(null); // Clear previous results
       return;
     }
 
-    const convert = (value) => (unit === "cm" ? value / 2.54 : value);
-    const parsedMeasurements = {
-      bust: convert(parseFloat(bust)),
-      waist: convert(parseFloat(waist)),
+    const convert = (value) => {
+      const numericValue = parseFloat(value);
+      return isNaN(numericValue) ? 0 : unit === "cm" ? numericValue / 2.54 : numericValue;
     };
 
-    console.log("Parsed Measurements Before Hips Calculation:", parsedMeasurements);
+    const parsedMeasurements = {
+      bust: convert(bust),
+      waist: convert(waist),
+    };
 
-    // Static test
-    console.log("Static Test Hips (40 * 0.4 + 32 * 0.6):", +(40 * 0.4 + 32 * 0.6).toFixed(10));
-
-    // Inline hips calculation
-    const bustComponent = +(parsedMeasurements.bust * 0.4).toFixed(10);
-    const waistComponent = +(parsedMeasurements.waist * 0.6).toFixed(10);
-
-    console.log("Bust Component (Bust * 0.4):", bustComponent);
-    console.log("Waist Component (Waist * 0.6):", waistComponent);
-
-    const hips = +(bustComponent + waistComponent).toFixed(10); // Fix precision
-    console.log("Inline Calculated Hips:", hips);
-
+    const hips = +(parsedMeasurements.bust * 0.4 + parsedMeasurements.waist * 0.6).toFixed(10);
     parsedMeasurements.hips = hips;
-
-    console.log("Parsed Measurements After Hips Calculation:", parsedMeasurements);
 
     const bestSize = getStandardSize(parsedMeasurements);
 
@@ -95,8 +82,6 @@ const SizeCalculator = () => {
       size: bestSize,
       message: `The best size match is ${bestSize}.`,
     };
-
-    console.log("Final Results Before Rendering:", finalResults);
 
     setResults(finalResults);
     setErrors([]);
@@ -130,7 +115,7 @@ const SizeCalculator = () => {
                 <option value="cm">Centimeters</option>
               </select>
             </div>
-            {["bust", "waist"].map((field) => (
+            {["bust", "waist", "height", "weight"].map((field) => (
               <div key={field} className="mb-4">
                 <label className="block font-medium capitalize">{field}</label>
                 <input
@@ -143,6 +128,21 @@ const SizeCalculator = () => {
                 />
               </div>
             ))}
+            <div className="mb-4">
+              <label className="block font-medium">Age Group</label>
+              <select
+                name="ageGroup"
+                value={measurements.ageGroup}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="18-24">18-24</option>
+                <option value="25-34">25-34</option>
+                <option value="35-44">35-44</option>
+                <option value="45-54">45-54</option>
+                <option value="55+">55+</option>
+              </select>
+            </div>
             <button
               onClick={handleCalculate}
               className="w-full bg-blue-500 text-white py-2 rounded"
