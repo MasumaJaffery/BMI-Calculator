@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { standardSizes } from "./constants/standardSizes";
 
 // Function to calculate standard size
-const calculateStandardSize = ({ bust, waist }) => {
+const calculateStandardSize = ({ bust, waist, weight, height }) => {
   const parsedMeasurements = {
     bust: parseFloat(bust),
     waist: parseFloat(waist),
+    weight: parseFloat(weight),
+    height: parseFloat(height),
   };
 
   if (Object.values(parsedMeasurements).some((val) => isNaN(val) || val <= 0)) {
     return { size: "N/A", message: "Invalid or missing measurements. Please provide valid values." };
   }
-
-  console.log("Parsed Measurements:", parsedMeasurements);
 
   let closestSize = null;
   let closestDistance = Infinity;
@@ -20,17 +20,25 @@ const calculateStandardSize = ({ bust, waist }) => {
   for (const [size, ranges] of Object.entries(standardSizes)) {
     const bustCenter = (ranges.bust.min + ranges.bust.max) / 2;
     const waistCenter = (ranges.waist.min + ranges.waist.max) / 2;
+    const weightCenter = (ranges.weight.min + ranges.weight.max) / 2;
+    const heightCenter = (ranges.height.min + ranges.height.max) / 2;
 
     const bustDistance = Math.abs(parsedMeasurements.bust - bustCenter);
     const waistDistance = Math.abs(parsedMeasurements.waist - waistCenter);
+    const weightDistance = Math.abs(parsedMeasurements.weight - weightCenter);
+    const heightDistance = Math.abs(parsedMeasurements.height - heightCenter);
 
-    const totalDistance = bustDistance + waistDistance;
+    const totalDistance = bustDistance + waistDistance + weightDistance + heightDistance;
 
     if (
       parsedMeasurements.bust >= ranges.bust.min &&
       parsedMeasurements.bust <= ranges.bust.max &&
       parsedMeasurements.waist >= ranges.waist.min &&
-      parsedMeasurements.waist <= ranges.waist.max
+      parsedMeasurements.waist <= ranges.waist.max &&
+      parsedMeasurements.weight >= ranges.weight.min &&
+      parsedMeasurements.weight <= ranges.weight.max &&
+      parsedMeasurements.height >= ranges.height.min &&
+      parsedMeasurements.height <= ranges.height.max
     ) {
       return { size, message: `You are a ${size} size!` };
     }
@@ -41,14 +49,29 @@ const calculateStandardSize = ({ bust, waist }) => {
     }
   }
 
-  if (closestSize) {
-    return {
-      size: closestSize,
-      message: `Closest match: ${closestSize}. Your measurements are slightly outside the exact range.`,
-    };
-  }
+  return closestSize
+    ? {
+        size: closestSize,
+        message: `Closest match: ${closestSize}. Your measurements are slightly outside the exact range.`,
+      }
+    : { size: "N/A", message: "Measurements do not match any standard size." };
+};
 
-  return { size: "N/A", message: "Measurements do not match any standard size." };
+// Recommendation logic for style suggestions
+const recommendStyle = (size) => {
+  switch (size) {
+    case "XS":
+    case "S":
+      return "Fitted garments and structured silhouettes.";
+    case "M":
+    case "L":
+      return "A-line and flowy fabrics.";
+    case "XL":
+    case "XXL":
+      return "Empire waistlines and V-necklines.";
+    default:
+      return "Please consult with a stylist.";
+  }
 };
 
 // Main Component
@@ -71,18 +94,20 @@ const SizeCalculator = () => {
   };
 
   const handleCalculate = () => {
-    const { waist, bust } = measurements;
+    const { waist, bust, weight, height } = measurements;
 
-    if (!waist || !bust) {
-      setErrors(["Bust and waist measurements are required."]);
+    if (!waist || !bust || !weight || !height) {
+      setErrors(["Bust, waist, weight, and height measurements are required."]);
       return;
     }
 
-    const sizeInfo = calculateStandardSize({ bust, waist });
+    const sizeInfo = calculateStandardSize({ bust, waist, weight, height });
 
     setResults({
       bust,
       waist,
+      weight,
+      height,
       size: sizeInfo.size,
       message: sizeInfo.message,
     });
@@ -157,6 +182,13 @@ const SizeCalculator = () => {
             <div className="bg-gray-50 p-4 rounded mb-6">
               <p><strong>Standard Size:</strong> {results.size}</p>
               <p>{results.message}</p>
+              {results.size !== "N/A" && (
+                <ul>
+                  <li>Bust-to-Waist Ratio: {(results.bust / results.waist).toFixed(2)}</li>
+                  <li>Weight-Based Adjustment: {results.weight} lbs</li>
+                  <li>Recommended Style: {recommendStyle(results.size)}</li>
+                </ul>
+              )}
             </div>
           )}
         </div>
