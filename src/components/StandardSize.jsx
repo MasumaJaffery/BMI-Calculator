@@ -1,65 +1,48 @@
 import React, { useState } from "react";
-import { standardSizes } from "./constants/standardSizes";
+import { standardSizes } from './constants/standardSizes';
 
-// Function to calculate standard size
-const calculateStandardSize = ({ bust, waist }) => {
-  const parsedMeasurements = {
-    bust: parseFloat(bust),
-    waist: parseFloat(waist),
-  };
+const getStandardSize = (measurements) => {
+  const { bust, waist, hips } = measurements;
+  let bestSize = "M"; // Default size
+  let bestMatch = 0;
 
-  if (Object.values(parsedMeasurements).some((val) => isNaN(val) || val <= 0)) {
-    return { size: "N/A", message: "Invalid or missing measurements. Please provide valid values." };
-  }
+  Object.entries(standardSizes).forEach(([size, ranges]) => {
+    let matches = 0;
+    let total = 0;
 
-  console.log("Parsed Measurements:", parsedMeasurements);
-
-  let closestSize = null;
-  let closestDistance = Infinity;
-
-  for (const [size, ranges] of Object.entries(standardSizes)) {
-    const bustCenter = (ranges.bust.min + ranges.bust.max) / 2;
-    const waistCenter = (ranges.waist.min + ranges.waist.max) / 2;
-
-    const bustDistance = Math.abs(parsedMeasurements.bust - bustCenter);
-    const waistDistance = Math.abs(parsedMeasurements.waist - waistCenter);
-
-    const totalDistance = bustDistance + waistDistance;
-
-    if (
-      parsedMeasurements.bust >= ranges.bust.min &&
-      parsedMeasurements.bust <= ranges.bust.max &&
-      parsedMeasurements.waist >= ranges.waist.min &&
-      parsedMeasurements.waist <= ranges.waist.max
-    ) {
-      return { size, message: `You are a ${size} size!` };
+    if (bust) {
+      total++;
+      if (bust >= ranges.bust.min && bust <= ranges.bust.max) matches++;
+    }
+    if (waist) {
+      total++;
+      if (waist >= ranges.waist.min && waist <= ranges.waist.max) matches++;
+    }
+    if (hips) {
+      total++;
+      if (hips >= ranges.hips.min && hips <= ranges.hips.max) matches++;
     }
 
-    if (totalDistance < closestDistance) {
-      closestDistance = totalDistance;
-      closestSize = size;
+    const matchRate = total > 0 ? matches / total : 0;
+    if (matchRate > bestMatch) {
+      bestMatch = matchRate;
+      bestSize = size;
     }
-  }
+  });
 
-  if (closestSize) {
-    return {
-      size: closestSize,
-      message: `Closest match: ${closestSize}. Your measurements are slightly outside the exact range.`,
-    };
-  }
-
-  return { size: "N/A", message: "Measurements do not match any standard size." };
+  return bestSize;
 };
 
-// Main Component
+console.log("Bust Component:", bustComponent); 
+console.log("Waist Component:", waistComponent); 
+console.log("Calculated Hips with Precision Fix:", hips); 
+
+
 const SizeCalculator = () => {
   const [measurements, setMeasurements] = useState({
-    height: "",
-    weight: "",
-    waist: "",
     bust: "",
+    waist: "",
     unit: "inches",
-    ageGroup: "18-24", // Default age group
   });
 
   const [results, setResults] = useState(null);
@@ -71,21 +54,51 @@ const SizeCalculator = () => {
   };
 
   const handleCalculate = () => {
-    const { waist, bust } = measurements;
+    const { bust, waist, unit } = measurements;
 
     if (!waist || !bust) {
       setErrors(["Bust and waist measurements are required."]);
       return;
     }
 
-    const sizeInfo = calculateStandardSize({ bust, waist });
+    const convert = (value) => (unit === "cm" ? value / 2.54 : value);
+    const parsedMeasurements = {
+      bust: convert(parseFloat(bust)),
+      waist: convert(parseFloat(waist)),
+    };
 
-    setResults({
-      bust,
-      waist,
-      size: sizeInfo.size,
-      message: sizeInfo.message,
-    });
+    console.log("Parsed Measurements Before Hips Calculation:", parsedMeasurements);
+
+    // Static test
+    console.log("Static Test Hips (40 * 0.4 + 32 * 0.6):", +(40 * 0.4 + 32 * 0.6).toFixed(10));
+
+    // Inline hips calculation
+    const bustComponent = +(parsedMeasurements.bust * 0.4).toFixed(10);
+    const waistComponent = +(parsedMeasurements.waist * 0.6).toFixed(10);
+
+    console.log("Bust Component (Bust * 0.4):", bustComponent);
+    console.log("Waist Component (Waist * 0.6):", waistComponent);
+
+    const hips = +(bustComponent + waistComponent).toFixed(10); // Fix precision
+    console.log("Inline Calculated Hips:", hips);
+
+    parsedMeasurements.hips = hips;
+
+    console.log("Parsed Measurements After Hips Calculation:", parsedMeasurements);
+
+    const bestSize = getStandardSize(parsedMeasurements);
+
+    const finalResults = {
+      bust: parsedMeasurements.bust.toFixed(2),
+      waist: parsedMeasurements.waist.toFixed(2),
+      hips: parsedMeasurements.hips.toFixed(2),
+      size: bestSize,
+      message: `The best size match is ${bestSize}.`,
+    };
+
+    console.log("Final Results Before Rendering:", finalResults);
+
+    setResults(finalResults);
     setErrors([]);
   };
 
@@ -117,7 +130,7 @@ const SizeCalculator = () => {
                 <option value="cm">Centimeters</option>
               </select>
             </div>
-            {["height", "weight", "waist", "bust"].map((field) => (
+            {["bust", "waist"].map((field) => (
               <div key={field} className="mb-4">
                 <label className="block font-medium capitalize">{field}</label>
                 <input
@@ -130,21 +143,6 @@ const SizeCalculator = () => {
                 />
               </div>
             ))}
-            <div className="mb-4">
-              <label className="block font-medium">Age Group</label>
-              <select
-                name="ageGroup"
-                value={measurements.ageGroup}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              >
-                <option value="18-24">18-24</option>
-                <option value="25-34">25-34</option>
-                <option value="35-44">35-44</option>
-                <option value="45-54">45-54</option>
-                <option value="55+">55+</option>
-              </select>
-            </div>
             <button
               onClick={handleCalculate}
               className="w-full bg-blue-500 text-white py-2 rounded"
@@ -155,6 +153,9 @@ const SizeCalculator = () => {
 
           {results && (
             <div className="bg-gray-50 p-4 rounded mb-6">
+              <p><strong>Bust:</strong> {results.bust} inches</p>
+              <p><strong>Waist:</strong> {results.waist} inches</p>
+              <p><strong>Hips (calculated):</strong> {results.hips} inches</p>
               <p><strong>Standard Size:</strong> {results.size}</p>
               <p>{results.message}</p>
             </div>
